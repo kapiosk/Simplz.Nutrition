@@ -1,4 +1,6 @@
 using Microsoft.Extensions.AI;
+using Microsoft.SemanticKernel;
+using Microsoft.SemanticKernel.Connectors.SqliteVec;
 using Simplz.Nutrition.Options;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -16,6 +18,16 @@ builder.Services.AddScoped<IChatClient>(sp =>
 {
     var options = sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<OllamaOptions>>().Value;
     return new OllamaSharp.OllamaApiClient(new Uri(options.Endpoint), options.ChatModel);
+});
+builder.Services.AddScoped(sp =>
+{
+    var options = sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<OllamaOptions>>().Value;
+    var builder = Kernel.CreateBuilder();
+    builder.AddOllamaChatCompletion(options.ChatModel, new Uri(options.Endpoint))
+            .AddOllamaTextGeneration(options.ChatModel, new Uri(options.Endpoint))
+            .AddOllamaEmbeddingGenerator(options.EmbeddingModel, new Uri(options.Endpoint));
+    builder.AddVectorStoreTextSearch();
+    return builder.Build();
 });
 
 var app = builder.Build();
