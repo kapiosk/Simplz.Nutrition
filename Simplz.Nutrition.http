@@ -1,0 +1,6 @@
+@Nutrition_HostAddress = http://localhost:5033
+
+GET {{Nutrition_HostAddress}}/
+Accept: application/json
+
+###
