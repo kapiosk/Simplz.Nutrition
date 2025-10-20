@@ -5,6 +5,7 @@ using Microsoft.SemanticKernel.Connectors.SqliteVec;
 using Microsoft.SemanticKernel.Data;
 using Simplz.Nutrition.Models;
 using Simplz.Nutrition.Options;
+using Simplz.Nutrition.Services;
 
 #pragma warning disable SKEXP0001 
 
@@ -38,7 +39,8 @@ builder.Services.AddSingleton<IChatClient>(sp =>
     var options = sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<OllamaOptions>>().Value;
     return new OllamaSharp.OllamaApiClient(new Uri(options.Endpoint), options.ChatModel);
 });
-builder.Services.AddSingleton( sp =>
+builder.Services.AddScoped<IFoodDataImportService, FoodDataImportService>();
+builder.Services.AddSingleton(sp =>
 {
     var options = sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<OllamaOptions>>().Value;
     var embeddingGenerator = sp.GetRequiredService<IEmbeddingGenerator<string, Embedding<float>>>();
@@ -65,8 +67,20 @@ var app = builder.Build();
 
 app.UseHttpsRedirection();
 
-app.MapGet("/", (Kernel kernel) => {
+app.MapGet("/", async (Kernel kernel) =>
+{
+    var query = "What is the Semantic Kernel?";
+    var prompt = "{{SearchPlugin.Search $query}}. {{$query}}";
+    KernelArguments arguments = new() { { "query", query } };
+    Console.WriteLine(await kernel.InvokePromptAsync(prompt, arguments));
     return "Hi";
+});
+
+app.MapPost("/import/survey", async (IFoodDataImportService importer, CancellationToken cancellationToken) =>
+{
+    var datasetPath = Path.Combine(AppContext.BaseDirectory, "Temp", "FoodData_Central_survey_food_csv_2024-10-31");
+    await importer.ImportAsync(datasetPath, cancellationToken);
+    return Results.Ok(new { Imported = true, Source = datasetPath });
 });
 
 app.Run();
