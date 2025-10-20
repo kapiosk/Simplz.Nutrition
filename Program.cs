@@ -1,9 +1,12 @@
 using Microsoft.Extensions.AI;
 using Microsoft.SemanticKernel;
+using Microsoft.SemanticKernel.Connectors.Ollama;
 using Microsoft.SemanticKernel.Connectors.SqliteVec;
 using Microsoft.SemanticKernel.Data;
 using Simplz.Nutrition.Models;
 using Simplz.Nutrition.Options;
+
+#pragma warning disable SKEXP0001 
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -23,20 +26,19 @@ builder.Services.AddSqliteVectorStore(sp =>
         VectorVirtualTableName = "FoodEmbedding",
     };
     return options;
-},
- lifetime: ServiceLifetime.Scoped);
+});
 
-builder.Services.AddScoped<IEmbeddingGenerator<string, Embedding<float>>>(sp =>
+builder.Services.AddSingleton<IEmbeddingGenerator<string, Embedding<float>>>(sp =>
 {
     var options = sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<OllamaOptions>>().Value;
     return new OllamaSharp.OllamaApiClient(new Uri(options.Endpoint), options.EmbeddingModel);
 });
-builder.Services.AddScoped<IChatClient>(sp =>
+builder.Services.AddSingleton<IChatClient>(sp =>
 {
     var options = sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<OllamaOptions>>().Value;
     return new OllamaSharp.OllamaApiClient(new Uri(options.Endpoint), options.ChatModel);
 });
-builder.Services.AddScoped( sp =>
+builder.Services.AddSingleton( sp =>
 {
     var options = sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<OllamaOptions>>().Value;
     var embeddingGenerator = sp.GetRequiredService<IEmbeddingGenerator<string, Embedding<float>>>();
@@ -48,8 +50,14 @@ builder.Services.AddScoped( sp =>
            .AddOllamaTextGeneration(options.ChatModel, new Uri(options.Endpoint))
            .AddOllamaEmbeddingGenerator(options.EmbeddingModel, new Uri(options.Endpoint));
 
-    // builder.AddVectorStoreTextSearch(new VectorStoreTextSearch(collection, embeddingGenerator));
+    var vectorStoreTextSearch = new VectorStoreTextSearch<Food>(collection, embeddingGenerator);
     var kernel = builder.Build();
+    // var _executionSettings = new OllamaPromptExecutionSettings()
+    // {
+    //     FunctionChoiceBehavior = FunctionChoiceBehavior.Auto(),
+    // };
+    var searchPlugin = vectorStoreTextSearch.CreateWithGetTextSearchResults("SearchPlugin");
+    kernel.Plugins.Add(searchPlugin);
     return kernel;
 });
 
@@ -57,6 +65,8 @@ var app = builder.Build();
 
 app.UseHttpsRedirection();
 
-app.MapGet("/", (Kernel kernel) => "Hi");
+app.MapGet("/", (Kernel kernel) => {
+    return "Hi";
+});
 
 app.Run();
