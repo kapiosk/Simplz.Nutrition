@@ -63,37 +63,35 @@ builder.Services.AddSingleton(sp =>
     return kernel;
 });
 
+builder.Services.AddScoped<ImportService>();
+
 var app = builder.Build();
 
-using (var scope = app.Services.CreateScope())
-{
-    using var db = scope.ServiceProvider.GetRequiredService<Simplz.Nutrition.Data.NutritionContext>();
-    db.Database.Migrate();
-}
+// using (var scope = app.Services.CreateScope())
+// {
+//     using var db = scope.ServiceProvider.GetRequiredService<NutritionContext>();
+//     db.Database.Migrate();
+// }
 
 app.UseHttpsRedirection();
 
-app.MapGet("/", async (Kernel kernel) =>
+app.MapGet("/", async (Kernel kernel, Microsoft.Extensions.VectorData.VectorStore vectorStore) =>
 {
-    // var query = "What is the Semantic Kernel?";
-    // var prompt = "{{FoodSearchPlugin.Search $query}}. {{$query}}";
-    // KernelArguments arguments = new() { { "query", query } };
-    // Console.WriteLine(await kernel.InvokePromptAsync(prompt, arguments));
-    return "Hi";
+    var collection = vectorStore.GetCollection<long, Food>("Food");
+    await foreach (var f in collection.SearchAsync("chicken raw", 5))
+    {
+        Console.WriteLine($"{f.Record.Name} ({f.Score})");
+    }
+    var query = "List chicken types";
+    var prompt = "{{FoodSearchPlugin.Search $query}}. {{$query}}";
+    KernelArguments arguments = new() { { "query", query } };
+    return Results.Ok(await kernel.InvokePromptAsync(prompt, arguments));
 });
 
-app.MapGet("/import/food", async (ICSVReader csvReader, NutritionContext context, CancellationToken cancellationToken) =>
+app.MapGet("/import/food", async (ImportService importService, CancellationToken cancellationToken) =>
 {
-    var file = Path.Combine("Temp", "FoodData_Central_sr_legacy_food_csv_2018-04", "food.csv");
-    var items = csvReader.ReadRecords<Simplz.Nutrition.Data.CSV.Food>(file).ToList();
-    await context.Foods.AddRangeAsync(items.Select(f => new Food
-    {
-        Id = f.Id,
-        Name = f.Description,
-        FoodCategoryId = f.FoodCategoryId,
-    }), cancellationToken);
-    await context.SaveChangesAsync(cancellationToken);
-    return Results.Ok(new { Imported = true, Source = file, Count = items.Count });
+    await importService.ImportFoodDataAsync(cancellationToken);
+    return Results.Ok();
 });
 
 app.Run();

@@ -16,7 +16,7 @@ namespace Simplz.Nutrition.Migrations
                 {
                     Id = table.Column<long>(type: "INTEGER", nullable: false),
                     Name = table.Column<string>(type: "TEXT", nullable: false),
-                    FoodCategoryId = table.Column<long>(type: "INTEGER", nullable: false)
+                    FoodCategoryId = table.Column<long>(type: "INTEGER", nullable: true)
                 },
                 constraints: table =>
                 {

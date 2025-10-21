@@ -10,7 +10,7 @@ using Simplz.Nutrition.Data;
 namespace Simplz.Nutrition.Migrations
 {
     [DbContext(typeof(NutritionContext))]
-    [Migration("20251021222905_InitialCreate")]
+    [Migration("20251021225050_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />

@@ -31,7 +31,7 @@ public class NutritionContext : DbContext
             entity.HasKey(f => f.Id); //this key must not be auto-generated
             entity.Property(f => f.Id).ValueGeneratedNever();
             entity.Property(f => f.Name).IsRequired();
-            entity.Property(f => f.FoodCategoryId).IsRequired();
+            entity.Property(f => f.FoodCategoryId);
             entity.Ignore(f => f.DescriptionEmbedding);
             // entity.HasOne<FoodCategory>()
             //       .WithMany()

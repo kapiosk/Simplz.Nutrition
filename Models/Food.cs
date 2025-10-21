@@ -8,7 +8,7 @@ public record Food
     public long Id { get; set; }
     [VectorStoreData()]
     public string Name { get; set; } = string.Empty;
-    public long FoodCategoryId { get; set; }
+    public long? FoodCategoryId { get; set; }
 
     [VectorStoreVector(Dimensions: 768, DistanceFunction = DistanceFunction.CosineDistance)]
     public ReadOnlyMemory<float>? DescriptionEmbedding { get; set; }
