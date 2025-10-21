@@ -5,6 +5,7 @@ using Microsoft.SemanticKernel.Connectors.SqliteVec;
 using Microsoft.SemanticKernel.Data;
 using Simplz.Nutrition.Models;
 using Simplz.Nutrition.Options;
+using Simplz.Nutrition.Services;
 // using Simplz.Nutrition.Services;
 
 #pragma warning disable SKEXP0001 
@@ -29,7 +30,7 @@ sp =>
     };
     return options;
 });
-
+builder.Services.AddSingleton<ICSVReader, CSVReader>();
 builder.Services.AddSingleton<IEmbeddingGenerator<string, Embedding<float>>>(sp =>
 {
     var options = sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<OllamaOptions>>().Value;
@@ -73,11 +74,15 @@ app.MapGet("/", async (Kernel kernel) =>
     return "Hi";
 });
 
-// app.MapPost("/import/survey", async (IFoodDataImportService importer, CancellationToken cancellationToken) =>
-// {
-//     var datasetPath = Path.Combine(AppContext.BaseDirectory, "Temp", "FoodData_Central_survey_food_csv_2024-10-31");
-//     await importer.ImportAsync(datasetPath, cancellationToken);
-//     return Results.Ok(new { Imported = true, Source = datasetPath });
-// });
+app.MapGet("/import", async (ICSVReader csvReader, CancellationToken cancellationToken) =>
+{
+    var res = new List<object>();
+    foreach (var file in Directory.GetFiles("Temp", "*.csv"))
+    {
+        var items = csvReader.ReadRecords(file);
+        res.Add(new { Imported = true, Source = file, Items = items.First(), Count = items.Count() });
+    }
+    return Results.Ok(res);
+});
 
 app.Run();

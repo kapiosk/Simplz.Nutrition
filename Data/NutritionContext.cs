@@ -12,6 +12,11 @@ public class NutritionContext : DbContext
         _options = options.Value;
     }
 
+    public DbSet<Models.Food> Foods => Set<Models.Food>();
+    public DbSet<Models.FoodCategory> FoodCategories => Set<Models.FoodCategory>();
+    public DbSet<Models.FoodNutrient> FoodNutrients => Set<Models.FoodNutrient>();
+    public DbSet<Models.Nutrient> Nutrients => Set<Models.Nutrient>();
+
     protected override void OnConfiguring(DbContextOptionsBuilder options)
         => options.UseSqlite(_options.DatabasePath);
 }
