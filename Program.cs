@@ -5,12 +5,13 @@ using Microsoft.SemanticKernel.Connectors.SqliteVec;
 using Microsoft.SemanticKernel.Data;
 using Simplz.Nutrition.Models;
 using Simplz.Nutrition.Options;
-using Simplz.Nutrition.Services;
+// using Simplz.Nutrition.Services;
 
 #pragma warning disable SKEXP0001 
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Services.AddDbContext<Simplz.Nutrition.Data.NutritionContext>();
 builder.Services.Configure<SqliteOptions>(builder.Configuration.GetSection("Sqlite"));
 builder.Services.Configure<OllamaOptions>(builder.Configuration.GetSection("Ollama"));
 builder.Services.AddSqliteVectorStore(sp =>
@@ -18,7 +19,7 @@ builder.Services.AddSqliteVectorStore(sp =>
     var options = sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<SqliteOptions>>().Value;
     return options.DatabasePath;
 },
- (sp) =>
+sp =>
 {
     var embeddingGenerator = sp.GetRequiredService<IEmbeddingGenerator<string, Embedding<float>>>();
     var options = new SqliteVectorStoreOptions
@@ -39,7 +40,7 @@ builder.Services.AddSingleton<IChatClient>(sp =>
     var options = sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<OllamaOptions>>().Value;
     return new OllamaSharp.OllamaApiClient(new Uri(options.Endpoint), options.ChatModel);
 });
-builder.Services.AddScoped<IFoodDataImportService, FoodDataImportService>();
+// builder.Services.AddScoped<IFoodDataImportService, FoodDataImportService>();
 builder.Services.AddSingleton(sp =>
 {
     var options = sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<OllamaOptions>>().Value;
@@ -54,10 +55,6 @@ builder.Services.AddSingleton(sp =>
 
     var vectorStoreTextSearch = new VectorStoreTextSearch<Food>(collection, embeddingGenerator);
     var kernel = builder.Build();
-    // var _executionSettings = new OllamaPromptExecutionSettings()
-    // {
-    //     FunctionChoiceBehavior = FunctionChoiceBehavior.Auto(),
-    // };
     var searchPlugin = vectorStoreTextSearch.CreateWithGetTextSearchResults("SearchPlugin");
     kernel.Plugins.Add(searchPlugin);
     return kernel;
@@ -69,18 +66,18 @@ app.UseHttpsRedirection();
 
 app.MapGet("/", async (Kernel kernel) =>
 {
-    var query = "What is the Semantic Kernel?";
-    var prompt = "{{SearchPlugin.Search $query}}. {{$query}}";
-    KernelArguments arguments = new() { { "query", query } };
-    Console.WriteLine(await kernel.InvokePromptAsync(prompt, arguments));
+    // var query = "What is the Semantic Kernel?";
+    // var prompt = "{{SearchPlugin.GetSearchResults $query}}. {{$query}}";
+    // KernelArguments arguments = new() { { "query", query } };
+    // Console.WriteLine(await kernel.InvokePromptAsync(prompt, arguments));
     return "Hi";
 });
 
-app.MapPost("/import/survey", async (IFoodDataImportService importer, CancellationToken cancellationToken) =>
-{
-    var datasetPath = Path.Combine(AppContext.BaseDirectory, "Temp", "FoodData_Central_survey_food_csv_2024-10-31");
-    await importer.ImportAsync(datasetPath, cancellationToken);
-    return Results.Ok(new { Imported = true, Source = datasetPath });
-});
+// app.MapPost("/import/survey", async (IFoodDataImportService importer, CancellationToken cancellationToken) =>
+// {
+//     var datasetPath = Path.Combine(AppContext.BaseDirectory, "Temp", "FoodData_Central_survey_food_csv_2024-10-31");
+//     await importer.ImportAsync(datasetPath, cancellationToken);
+//     return Results.Ok(new { Imported = true, Source = datasetPath });
+// });
 
 app.Run();
