@@ -55,7 +55,7 @@ builder.Services.AddSingleton(sp =>
 
     var vectorStoreTextSearch = new VectorStoreTextSearch<Food>(collection, embeddingGenerator);
     var kernel = builder.Build();
-    var searchPlugin = vectorStoreTextSearch.CreateWithGetTextSearchResults("SearchPlugin");
+    var searchPlugin = vectorStoreTextSearch.CreateWithSearch("SearchPlugin");
     kernel.Plugins.Add(searchPlugin);
     return kernel;
 });
@@ -66,10 +66,10 @@ app.UseHttpsRedirection();
 
 app.MapGet("/", async (Kernel kernel) =>
 {
-    // var query = "What is the Semantic Kernel?";
-    // var prompt = "{{SearchPlugin.GetSearchResults $query}}. {{$query}}";
-    // KernelArguments arguments = new() { { "query", query } };
-    // Console.WriteLine(await kernel.InvokePromptAsync(prompt, arguments));
+    var query = "What is the Semantic Kernel?";
+    var prompt = "{{SearchPlugin.Search $query}}. {{$query}}";
+    KernelArguments arguments = new() { { "query", query } };
+    Console.WriteLine(await kernel.InvokePromptAsync(prompt, arguments));
     return "Hi";
 });
 
