@@ -32,7 +32,7 @@ public class ImportService
             {
                 Id = f.Id,
                 Name = f.Description,
-                DescriptionEmbedding = await _embeddingGenerator.GenerateVectorAsync(f.Description, cancellationToken: cancellationToken),
+                DescriptionEmbedding = await _embeddingGenerator.GenerateVectorAsync(f.Description, new() { Dimensions = 384 }, cancellationToken),
             };
             await collection.UpsertAsync(food, cancellationToken);
         }

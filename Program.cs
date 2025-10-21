@@ -78,14 +78,16 @@ app.UseHttpsRedirection();
 app.MapGet("/", async (Kernel kernel, Microsoft.Extensions.VectorData.VectorStore vectorStore) =>
 {
     var collection = vectorStore.GetCollection<long, Food>("Food");
+    List<object> results = [];
     await foreach (var f in collection.SearchAsync("chicken raw", 5))
     {
-        Console.WriteLine($"{f.Record.Name} ({f.Score})");
+        results.Add(new { f.Record.Name, f.Score });
     }
-    var query = "List chicken types";
-    var prompt = "{{FoodSearchPlugin.Search $query}}. {{$query}}";
-    KernelArguments arguments = new() { { "query", query } };
-    return Results.Ok(await kernel.InvokePromptAsync(prompt, arguments));
+    return Results.Ok(results);
+    // var query = "List chicken types";
+    // var prompt = "{{FoodSearchPlugin.Search $query}}. {{$query}}";
+    // KernelArguments arguments = new() { { "query", query } };
+    // return Results.Ok(await kernel.InvokePromptAsync(prompt, arguments));
 });
 
 app.MapGet("/import/food", async (ImportService importService, CancellationToken cancellationToken) =>

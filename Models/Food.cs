@@ -10,6 +10,6 @@ public record Food
     public string Name { get; set; } = string.Empty;
     public long? FoodCategoryId { get; set; }
 
-    [VectorStoreVector(Dimensions: 768, DistanceFunction = DistanceFunction.CosineDistance)]
+    [VectorStoreVector(Dimensions: 384, DistanceFunction = DistanceFunction.CosineDistance)]
     public ReadOnlyMemory<float>? DescriptionEmbedding { get; set; }
 }
