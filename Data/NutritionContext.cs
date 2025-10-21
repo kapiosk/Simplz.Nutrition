@@ -28,7 +28,8 @@ public class NutritionContext : DbContext
         modelBuilder.Entity<Food>(entity =>
         {
             entity.ToTable("Food");
-            entity.HasKey(f => f.Id);
+            entity.HasKey(f => f.Id); //this key must not be auto-generated
+            entity.Property(f => f.Id).ValueGeneratedNever();
             entity.Property(f => f.Name).IsRequired();
             entity.Property(f => f.FoodCategoryId).IsRequired();
             entity.Ignore(f => f.DescriptionEmbedding);

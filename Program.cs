@@ -6,6 +6,7 @@ using Microsoft.SemanticKernel.Data;
 using Simplz.Nutrition.Models;
 using Simplz.Nutrition.Options;
 using Simplz.Nutrition.Services;
+using Simplz.Nutrition.Data;
 
 //https://learn.microsoft.com/en-us/semantic-kernel/concepts/vector-store-connectors/out-of-the-box-connectors/sqlite-connector?pivots=programming-language-csharp
 //https://learn.microsoft.com/en-us/semantic-kernel/concepts/text-search/text-search-plugins?source=recommendations&pivots=programming-language-csharp
@@ -57,7 +58,7 @@ builder.Services.AddSingleton(sp =>
 
     var vectorStoreTextSearch = new VectorStoreTextSearch<Food>(collection, embeddingGenerator);
     var kernel = builder.Build();
-    var searchPlugin = vectorStoreTextSearch.CreateWithSearch("SearchPlugin");
+    var searchPlugin = vectorStoreTextSearch.CreateWithSearch("FoodSearchPlugin");
     kernel.Plugins.Add(searchPlugin);
     return kernel;
 });
@@ -74,22 +75,25 @@ app.UseHttpsRedirection();
 
 app.MapGet("/", async (Kernel kernel) =>
 {
-    var query = "What is the Semantic Kernel?";
-    var prompt = "{{SearchPlugin.Search $query}}. {{$query}}";
-    KernelArguments arguments = new() { { "query", query } };
-    Console.WriteLine(await kernel.InvokePromptAsync(prompt, arguments));
+    // var query = "What is the Semantic Kernel?";
+    // var prompt = "{{FoodSearchPlugin.Search $query}}. {{$query}}";
+    // KernelArguments arguments = new() { { "query", query } };
+    // Console.WriteLine(await kernel.InvokePromptAsync(prompt, arguments));
     return "Hi";
 });
 
-app.MapGet("/import", async (ICSVReader csvReader, CancellationToken cancellationToken) =>
+app.MapGet("/import/food", async (ICSVReader csvReader, NutritionContext context, CancellationToken cancellationToken) =>
 {
-    var res = new List<object>();
-    foreach (var file in Directory.GetFiles("Temp", "*.csv"))
+    var file = Path.Combine("Temp", "FoodData_Central_sr_legacy_food_csv_2018-04", "food.csv");
+    var items = csvReader.ReadRecords<Simplz.Nutrition.Data.CSV.Food>(file).ToList();
+    await context.Foods.AddRangeAsync(items.Select(f => new Food
     {
-        var items = csvReader.ReadRecords(file);
-        res.Add(new { Imported = true, Source = file, Items = items.First(), Count = items.Count() });
-    }
-    return Results.Ok(res);
+        Id = f.Id,
+        Name = f.Description,
+        FoodCategoryId = f.FoodCategoryId,
+    }), cancellationToken);
+    await context.SaveChangesAsync(cancellationToken);
+    return Results.Ok(new { Imported = true, Source = file, Count = items.Count });
 });
 
 app.Run();
