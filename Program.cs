@@ -1,4 +1,5 @@
 using Microsoft.Extensions.AI;
+using Microsoft.EntityFrameworkCore; // Needed for db.Database.Migrate()
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Connectors.Ollama;
 using Microsoft.SemanticKernel.Connectors.SqliteVec;
@@ -62,6 +63,12 @@ builder.Services.AddSingleton(sp =>
 });
 
 var app = builder.Build();
+
+using (var scope = app.Services.CreateScope())
+{
+    using var db = scope.ServiceProvider.GetRequiredService<Simplz.Nutrition.Data.NutritionContext>();
+    db.Database.Migrate();
+}
 
 app.UseHttpsRedirection();
 
