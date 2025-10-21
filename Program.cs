@@ -1,13 +1,14 @@
 using Microsoft.Extensions.AI;
-using Microsoft.EntityFrameworkCore; // Needed for db.Database.Migrate()
+using Microsoft.EntityFrameworkCore;
 using Microsoft.SemanticKernel;
-using Microsoft.SemanticKernel.Connectors.Ollama;
 using Microsoft.SemanticKernel.Connectors.SqliteVec;
 using Microsoft.SemanticKernel.Data;
 using Simplz.Nutrition.Models;
 using Simplz.Nutrition.Options;
 using Simplz.Nutrition.Services;
-// using Simplz.Nutrition.Services;
+
+//https://learn.microsoft.com/en-us/semantic-kernel/concepts/vector-store-connectors/out-of-the-box-connectors/sqlite-connector?pivots=programming-language-csharp
+//https://learn.microsoft.com/en-us/semantic-kernel/concepts/text-search/text-search-plugins?source=recommendations&pivots=programming-language-csharp
 
 #pragma warning disable SKEXP0001 
 
@@ -27,7 +28,6 @@ sp =>
     var options = new SqliteVectorStoreOptions
     {
         EmbeddingGenerator = embeddingGenerator,
-        VectorVirtualTableName = "FoodEmbedding",
     };
     return options;
 });
@@ -42,13 +42,13 @@ builder.Services.AddSingleton<IChatClient>(sp =>
     var options = sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<OllamaOptions>>().Value;
     return new OllamaSharp.OllamaApiClient(new Uri(options.Endpoint), options.ChatModel);
 });
-// builder.Services.AddScoped<IFoodDataImportService, FoodDataImportService>();
+
 builder.Services.AddSingleton(sp =>
 {
     var options = sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<OllamaOptions>>().Value;
     var embeddingGenerator = sp.GetRequiredService<IEmbeddingGenerator<string, Embedding<float>>>();
     var vectorStore = sp.GetRequiredService<Microsoft.Extensions.VectorData.VectorStore>();
-    var collection = vectorStore.GetCollection<long, Food>("FoodEmbedding");
+    var collection = vectorStore.GetCollection<long, Food>("Food");
     collection.EnsureCollectionExistsAsync().ConfigureAwait(false);
     var builder = Kernel.CreateBuilder();
     builder.AddOllamaChatCompletion(options.ChatModel, new Uri(options.Endpoint))
