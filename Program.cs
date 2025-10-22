@@ -6,7 +6,6 @@ using Microsoft.SemanticKernel.Data;
 using Simplz.Nutrition.Models;
 using Simplz.Nutrition.Options;
 using Simplz.Nutrition.Services;
-using Simplz.Nutrition.Data;
 
 //https://learn.microsoft.com/en-us/semantic-kernel/concepts/vector-store-connectors/out-of-the-box-connectors/sqlite-connector?pivots=programming-language-csharp
 //https://learn.microsoft.com/en-us/semantic-kernel/concepts/text-search/text-search-plugins?source=recommendations&pivots=programming-language-csharp
@@ -84,10 +83,10 @@ app.MapGet("/", async (Kernel kernel, Microsoft.Extensions.VectorData.VectorStor
         results.Add(new { f.Record.Name, f.Score });
     }
     return Results.Ok(results);
-    // var query = "List chicken types";
-    // var prompt = "{{FoodSearchPlugin.Search $query}}. {{$query}}";
-    // KernelArguments arguments = new() { { "query", query } };
-    // return Results.Ok(await kernel.InvokePromptAsync(prompt, arguments));
+    // var foodSearchPlugin = kernel.Plugins["FoodSearchPlugin"];
+    // var getTextSearchResults = foodSearchPlugin["Search"];
+    // var response = await kernel.InvokeAsync(getTextSearchResults, new() { ["query"] = "Tell me a type of chicken" });
+    // return Results.Ok(response.GetValue<string>());
 });
 
 app.MapGet("/import/food", async (ImportService importService, CancellationToken cancellationToken) =>
