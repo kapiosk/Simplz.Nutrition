@@ -54,7 +54,6 @@ builder.Services.AddSingleton(sp =>
     builder.AddOllamaChatCompletion(options.ChatModel, new Uri(options.Endpoint))
            .AddOllamaTextGeneration(options.ChatModel, new Uri(options.Endpoint))
            .AddOllamaEmbeddingGenerator(options.EmbeddingModel, new Uri(options.Endpoint));
-
     var vectorStoreTextSearch = new VectorStoreTextSearch<Food>(collection, embeddingGenerator);
     var kernel = builder.Build();
     var searchPlugin = vectorStoreTextSearch.CreateWithSearch("FoodSearchPlugin");
